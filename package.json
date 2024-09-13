@@ -1,0 +1,31 @@
+{
+	"name": "tanstack-query-graphql-codegen",
+	"version": "0.0.1",
+	"private": true,
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"generate": "graphql-codegen",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"codegen": "graphql-codegen --config codegen.ts"
+	},
+	"devDependencies": {
+		"@graphql-codegen/cli": "5.0.2",
+		"@graphql-codegen/typescript": "4.0.9",
+		"@parcel/watcher": "^2.4.1",
+		"@sveltejs/adapter-auto": "^3.0.0",
+		"@sveltejs/kit": "^2.0.0",
+		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"svelte": "^4.2.7",
+		"svelte-check": "^4.0.0",
+		"typescript": "^5.6.2",
+		"vite": "^5.0.3"
+	},
+	"type": "module",
+	"dependencies": {
+		"@tanstack/svelte-query": "^5.56.2",
+		"graphql": "^16.9.0"
+	}
+}

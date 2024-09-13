@@ -1,0 +1,5 @@
+query GetUserByIdV2($id: ID!, $id2: ID!) {
+  user(id: $id) {
+    name
+  }
+}
