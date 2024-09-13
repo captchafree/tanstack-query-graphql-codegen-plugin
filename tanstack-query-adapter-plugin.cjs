@@ -1,9 +1,7 @@
 const { PluginFunction } = require('@graphql-codegen/plugin-helpers');
 
-const typeMap = {
-  'ID': 'string',
-  'String': 'string',
-}
+const returnTypeName = "TanstackQueryParams"
+
 /**
  * GraphQL Codegen Plugin to generate TanStack Query functions
  * @type {PluginFunction}
@@ -11,10 +9,35 @@ const typeMap = {
 const plugin = (schema, documents, config) => {
   let generatedCode = `import * as types from './graphql';\n\n`;
 
-  generatedCode += `export type QueryResult<T> = {
+  generatedCode += `export type ${returnTypeName}<T> = {
   queryKey: unknown[],
   queryFn: () => Promise<T>
 };\n\n`
+
+generatedCode += `type QueryArgs = {
+    query: string,
+    variables: any
+  }
+
+async function executeQuery(f = fetch, args: QueryArgs) {
+  const res = await f('/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: args.query,
+      variables: args.variables,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error('There was an error');
+  }
+
+  return await res.json()
+}\n\n
+`
 
   documents.forEach((doc) => {
     doc.document.definitions.forEach((definition) => {
@@ -24,15 +47,6 @@ const plugin = (schema, documents, config) => {
         const variables = operation.variableDefinitions;
 
         if (queryName) {
-          const variableTypes = variables
-            ?.map((v) => {
-              const name = v.variable.name.value;
-              const unwrappedType = unwrapType(v.type)
-              const type = unwrappedType.kind === 'NamedType' ? unwrappedType.name.value : 'any';
-              return `${name}: ${typeMap[type] ?? type}`;
-            })
-            .join(', ') || '';
-
           const queryParams = variables
             ?.map((v) => `params.${v.variable.name.value}`)
             .join(', ') || '';
@@ -41,29 +55,14 @@ const plugin = (schema, documents, config) => {
 
           // Generating the function for each query document
           generatedCode += `
-export const ${lowercaseFirstLetter(queryName)} = (${variables ? `params: ${variableTypeName}` : ''}, f = fetch): QueryResult<types.${queryName}Query> => ({
+export const ${lowercaseFirstLetter(queryName)} = (${variables ? `params: ${variableTypeName}` : ''}, f = fetch): ${returnTypeName}<types.${queryName}Query> => ({
   queryKey: ["${queryName}", ${queryParams}],
-  queryFn: async () => {
-    const res = await f('/graphql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query: \`
+  queryFn: async () => executeQuery(f, {
+     query: \`
           ${doc.rawSDL}
         \`,
-        variables: ${variableTypes ? 'params' : '{}'}
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error('There was an error');
-    }
-
-    const data = await res.json();
-    return data;
-  },
+        variables: ${variables ? 'params' : '{}'}
+      })
 });
 `;
         }
